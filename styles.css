@@ -513,6 +513,10 @@ img {
 }
 
 .phone-mockup {
+    display: block;
+    text-decoration: none;
+    cursor: pointer;
+    color: inherit;
     width: 320px;
     height: 610px;
     background: #000;
