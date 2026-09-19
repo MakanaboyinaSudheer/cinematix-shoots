@@ -63,32 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Video Modal Logic ---
+    // --- Video & Poster Modal Logic ---
     const modal = document.getElementById('videoModal');
     const closeBtn = document.querySelector('.close-modal');
     const youtubePlayer = document.getElementById('youtubePlayer');
-    const videoCards = document.querySelectorAll('.video-card');
-
-    // Open modal
-    videoCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const videoUrl = card.getAttribute('data-video');
-            if(videoUrl) {
-                let embedUrl = videoUrl;
-                if (!embedUrl.includes('/embed/')) {
-                    if (embedUrl.includes('watch?v=')) {
-                        embedUrl = embedUrl.replace('watch?v=', 'embed/');
-                    } else if (embedUrl.includes('youtu.be/')) {
-                        embedUrl = embedUrl.replace('youtu.be/', 'www.youtube.com/embed/');
-                    }
-                }
-                const separator = embedUrl.includes('?') ? '&' : '?';
-                youtubePlayer.src = `${embedUrl}${separator}autoplay=1`;
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            }
-        });
-    });
+    const modalVideoWrapper = document.getElementById('modalVideoWrapper');
+    const modalPosterWrapper = document.getElementById('modalPosterWrapper');
+    const posterImage = document.getElementById('posterImage');
+    const posterBookBtn = document.getElementById('posterBookBtn');
 
     // Close modal function
     const closeModal = () => {
@@ -97,9 +79,31 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.style.overflow = 'auto'; // Restore scrolling
             setTimeout(() => {
                 if (youtubePlayer) youtubePlayer.src = '';
+                if (modalVideoWrapper) modalVideoWrapper.style.display = 'block';
+                if (modalPosterWrapper) modalPosterWrapper.style.display = 'none';
             }, 300);
         }
     };
+
+    // Poster Click Triggers
+    const viewPosterBtns = document.querySelectorAll('.package-img-wrapper, .view-poster-btn');
+    viewPosterBtns.forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const imgUrl = trigger.getAttribute('data-img') || trigger.closest('.package-showcase-card')?.getAttribute('data-image');
+            const pkgName = trigger.getAttribute('data-title') || trigger.closest('.package-showcase-card')?.getAttribute('data-package');
+
+            if (imgUrl && modal) {
+                if (modalVideoWrapper) modalVideoWrapper.style.display = 'none';
+                if (modalPosterWrapper) modalPosterWrapper.style.display = 'flex';
+                if (posterImage) posterImage.src = imgUrl;
+                if (posterBookBtn && pkgName) posterBookBtn.setAttribute('data-package', pkgName);
+
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    });
 
     // Close on X click
     if (closeBtn) {
@@ -127,32 +131,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const packageSelect = document.getElementById('package');
     packageBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const pkgName = btn.getAttribute('data-package');
             if (packageSelect && pkgName) {
-                packageSelect.value = pkgName;
+                for (let option of packageSelect.options) {
+                    if (option.value === pkgName || option.value.includes(pkgName) || pkgName.includes(option.value)) {
+                        packageSelect.value = option.value;
+                        break;
+                    }
+                }
             }
+            closeModal();
             const bookingSection = document.getElementById('booking');
             if (bookingSection) {
                 bookingSection.scrollIntoView({ behavior: 'smooth' });
             }
-        });
-    });
-
-    // --- Portfolio Filter Logic ---
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const category = btn.getAttribute('data-filter');
-
-            videoCards.forEach(card => {
-                if (category === 'all' || card.getAttribute('data-category') === category) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
         });
     });
 
@@ -162,4 +155,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date().toISOString().split('T')[0];
         dateInput.min = today;
     }
+
+    // --- Scroll Reveal Animations ---
+    const showcaseCards = document.querySelectorAll('.package-showcase-card');
+    showcaseCards.forEach((card, index) => {
+        card.classList.add('reveal-on-scroll', `stagger-${index + 1}`);
+    });
+
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach((card, index) => {
+        card.classList.add('reveal-on-scroll', `stagger-${(index % 3) + 1}`);
+    });
+
+    const sectionHeaders = document.querySelectorAll('.section-header');
+    sectionHeaders.forEach(header => {
+        header.classList.add('reveal-on-scroll');
+    });
+
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -40px 0px',
+        threshold: 0.12
+    };
+
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => {
+        revealObserver.observe(el);
+    });
 });
